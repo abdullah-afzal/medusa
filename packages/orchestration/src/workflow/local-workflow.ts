@@ -90,17 +90,18 @@ export class LocalWorkflow {
           }
 
           return async (...args) => {
-            const ctxIndex =
-              MedusaContext.getIndex(target, prop as string) ?? args.length - 1
+            const ctxIndex = MedusaContext.getIndex(target, prop as string)
 
-            const hasContext = args[ctxIndex]?.__type === MedusaContextType
-            if (!hasContext) {
-              const context = this_.medusaContext
-              if (context?.__type === MedusaContextType) {
-                delete context?.manager
-                delete context?.transactionManager
+            if (typeof ctxIndex !== "undefined") {
+              const hasContext = args[ctxIndex]?.__type === MedusaContextType
+              if (!hasContext) {
+                const context = this_.medusaContext
+                if (context?.__type === MedusaContextType) {
+                  delete context?.manager
+                  delete context?.transactionManager
 
-                args[ctxIndex] = context
+                  args[ctxIndex] = context
+                }
               }
             }
             return await target[prop].apply(target, [...args])
