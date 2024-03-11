@@ -1,4 +1,3 @@
-import { CartDTO } from "@medusajs/types"
 import {
   WorkflowData,
   createWorkflow,
@@ -8,9 +7,11 @@ import { useRemoteQueryStep } from "../../../common/steps/use-remote-query"
 import { addShippingMethodToCartStep } from "../steps"
 import { getShippingOptionPriceSetsStep } from "../steps/get-shipping-option-price-sets"
 import { refreshCartPromotionsStep } from "../steps/refresh-cart-promotions"
+import { updateTaxLinesStep } from "../steps/update-tax-lines"
 
 interface AddShippingMethodToCartWorkflowInput {
-  cart: CartDTO
+  cart_id: string
+  currency_code: string
   options: {
     id: string
     data?: Record<string, unknown>
@@ -23,19 +24,13 @@ export const addShippingMethodToWorkflow = createWorkflow(
   (
     input: WorkflowData<AddShippingMethodToCartWorkflowInput>
   ): WorkflowData<void> => {
-    const pricingContext = transform({ input }, (data) => {
-      return {
-        currency_code: data.input.cart.currency_code,
-      }
-    })
-
     const optionIds = transform({ input }, (data) => {
       return (data.input.options ?? []).map((i) => i.id)
     })
 
     const priceSets = getShippingOptionPriceSetsStep({
       optionIds: optionIds,
-      context: pricingContext,
+      context: { currency_code: input.currency_code },
     })
 
     const shippingOptions = useRemoteQueryStep({
@@ -61,7 +56,7 @@ export const addShippingMethodToWorkflow = createWorkflow(
             amount: price,
             data: option.data,
             name: shippingOption.name,
-            cart_id: data.input.cart.id,
+            cart_id: data.input.cart_id,
           }
         })
 
@@ -69,7 +64,13 @@ export const addShippingMethodToWorkflow = createWorkflow(
       }
     )
 
-    addShippingMethodToCartStep({ shipping_methods: shippingMethodInput })
-    refreshCartPromotionsStep({ id: input.cart.id })
+    const shippingMethods = addShippingMethodToCartStep({
+      shipping_methods: shippingMethodInput,
+    })
+    refreshCartPromotionsStep({ id: input.cart_id })
+    updateTaxLinesStep({
+      cart_or_cart_id: input.cart_id,
+      shipping_methods: shippingMethods,
+    })
   }
 )

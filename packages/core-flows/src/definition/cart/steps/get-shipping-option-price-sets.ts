@@ -1,5 +1,5 @@
 import { ModuleRegistrationName } from "@medusajs/modules-sdk"
-import { IPricingModuleService } from "@medusajs/types"
+import { IPricingModuleService, PricingContext } from "@medusajs/types"
 import {
   ContainerRegistrationKeys,
   MedusaError,
@@ -29,7 +29,7 @@ export const getShippingOptionPriceSetsStep = createStep(
     )
 
     const query = remoteQueryObjectFromString({
-      entryPoint: "shippin_option_price_set",
+      entryPoint: "shipping_option_price_set",
       fields: ["id", "shipping_option_id", "price_set_id"],
       variables: {
         shipping_option_id: data.optionIds,
@@ -58,7 +58,7 @@ export const getShippingOptionPriceSetsStep = createStep(
 
     const calculatedPriceSets = await pricingModuleService.calculatePrices(
       { id: priceSetIds },
-      { context: data.context as Record<string, string | number> }
+      { context: data.context as PricingContext["context"] }
     )
 
     const idToPriceSet = new Map<string, Record<string, any>>(
